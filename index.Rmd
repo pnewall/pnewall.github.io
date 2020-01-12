@@ -1,0 +1,201 @@
+---
+title       : Make sense of your data with the Wayfinder Analytics Shiny App!
+subtitle    : (Demonstrated here with a version of the Titanic dataset from Kaggle)
+author      : Peter Newall
+job         : 
+framework   : io2012        # {io2012, html5slides, shower, dzslides, ...}
+highlighter : highlight.js  # {highlight.js, prettify, highlight}
+hitheme     : tomorrow      # 
+widgets     : []            # {mathjax, quiz, bootstrap}
+mode        : selfcontained # {standalone, draft}
+knit        : slidify::knit2slides
+
+---
+
+```{r setup, echo = FALSE, include = FALSE, results = 'asis'}
+
+if (!"dplyr" %in% installed.packages()) {
+  install.packages("dplyr")
+}
+library(dplyr)
+
+if (!"knitr" %in% installed.packages()) {
+  install.packages("knitr")
+}
+library(knitr)
+options(digits = 2)
+
+if (!"reshape2" %in% installed.packages()) {
+    install.packages("reshape2")
+}
+library(reshape2)
+
+if (!"stringr" %in% installed.packages()) {
+  install.packages("xtable")
+}
+library(stringr)
+
+if (!"xtable" %in% installed.packages()) {
+  install.packages("xtable")
+}
+library(xtable)
+
+if (!"leaflet" %in% installed.packages()) {
+  install.packages("leaflet")
+}
+library(leaflet)
+
+if (!"plotly" %in% installed.packages()) {
+  install.packages("plotly")
+}
+library(plotly)
+
+if (!"htmltools" %in% installed.packages()) {
+  install.packages("htmltools")
+}
+library(htmltools)
+
+if (!"rattle" %in% installed.packages()) {
+  install.packages("rattle")
+}
+library(rattle)
+
+if(!require("devtools")) install.packages("devtools")
+devtools::install_github("yihui/xaringan")
+library(xaringan)
+
+fileName <- "./Titanic_Simple.csv"
+
+fileUrl = paste(c(
+    "https://gist.githubusercontent.com/pnewall/",
+    "dbc4b0a52a19501cfdc71524ecd5b70c/raw/",
+    "ec6664fad84393e57461cfe106ba80e924f855df/",
+    "Titanic_Simple.csv"),
+    collapse = "")
+    
+if(!file.exists(fileName)) {
+    download.file(fileUrl, "./Titanic_Simple.csv", method = "curl")
+}
+    
+Titanic <- read.csv(fileName, header = T, sep = ",")
+
+Titanic <- Titanic %>% mutate(AgeRange = cut(Age, 
+                              breaks=c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100), 
+                              labels = c("0-10", "11-20", "21-30", "31-40", "41-50", 
+                                         "51-60", "61-70", "71-80", "81-90", "91-100"), 
+                                         include.lowest=TRUE))
+        
+tfdf <- Titanic %>%
+        filter(Sex == "female")
+        
+survivors <- tfdf %>% filter(Survived == 1)
+
+```
+
+## Do read (and arrow down through) this if you ...
+
+- have large and significant data in your business or field of study
+
+> * struggle to analyse and make sense of that data
+
+> * are sure that your data is trying to tell you something
+
+> * have in mind an outcome and use case for any successful analysis of that data
+
+> * have a use case which is one of - but by no means limited to - the following ...
+
+---&twocol w1:50% w2:50%
+
+## Potential Use Cases
+
+Would you like to be able to achieve these kinds of use case?
+
+*** =left
+
+- Behavioural Analysis
+- Churn
+- Customer Lifetime Value       
+- Clinical Trials
+- Demographic Segmentation    
+- Discount Guidance             
+- Expected Revenue/Margin
+
+*** =right
+
+- Lead Conversion
+- Net Promoter Score
+- Patient Adherence             
+- Propensity to Buy
+- Repeat Business             
+- Time to Close
+- Win Probability
+
+---&twocol w1:50% w2:50%
+
+## Demonstration Use Case - Surviving the Titanic
+
+This is used here only as a sample dataset but allows us to give you a taster of what the Wayfinder could achieve with your data - a prediction for the current slice such as
+
+```{r fits, echo = FALSE, results = 'asis'}
+
+tnames <- c('Pclass', 'SibSp', 'Parch')
+
+Titanic[, tnames] <- lapply(Titanic[, tnames], factor)
+tfdf[, tnames] <- lapply(tfdf[, tnames], factor)
+  
+fit <- rpart::rpart(
+       Survived ~ Pclass + Age + SibSp + Parch + Embarked, 
+       data = tfdf, method = "class", 
+       control = rpart::rpart.control(minsplit=5, cp=0.002))
+
+titfit <- rpart::rpart(
+       Survived ~ Pclass + Age + SibSp + Parch + Embarked, 
+       data = Titanic, method = "class", 
+       control = rpart::rpart.control(minsplit=5, cp=0.002))
+
+titpred <- sprintf("%1.2f%%", mean(predict(titfit, type = "prob")[, 2]) * 100)
+tpred <- sprintf("%1.2f%%", mean(predict(fit, type = "prob")[, 2]) * 100)
+
+```
+
+*** =left
+
+```{r preds, echo = FALSE, results = 'asis'}
+
+cat(paste("There are currently", nrow(tfdf), 
+          "passengers selected out of a possible", nrow(Titanic),
+          "and their average chances of survival are", tpred,
+          "which compares to an overall average of", titpred, "<br>", "<br>",
+          "... and a full decision tree such as this"))
+
+```
+
+*** =right
+
+```{r tpred_out, echo = FALSE, results = 'asis'}
+
+fancyRpartPlot(fit, palettes = c("Reds", "Greens"),
+                     main = "Survival Decision Tree",
+                     sub = "(green rather than red indicates survival more likely)"
+)
+
+```
+
+---
+
+## Your Next Steps to Success with the Wayfinder App
+
+- See the full demonstration app at https://pnewall.shinyapps.io/Passengers/
+
+> * Agree your use case and business outcome
+
+> * Prepare the dataset for Wayfinder
+
+> * Interactively slice that dataset with Wayfinder parameters
+
+> * Wayfinder analyses and predicts the business outcome for the current slice
+
+> * Enjoy new insights and perspectives into your data (some of them in 3D!)
+
+> * Sweat the data asset and make better-informed decisions!
+
